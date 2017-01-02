@@ -1,0 +1,45 @@
+
+%web_drop_table(CUSTS.CUSTOMERS);
+%web_drop_table(CUSTS.ORDERS);
+%web_drop_table(CUSTS.POSTCODES);
+%web_drop_table(CUSTS.MERGED);
+
+DATA _NULL_;
+	FILENAME REFFILE "&path/CUSTOMERS.csv";
+RUN;
+
+PROC IMPORT DATAFILE=REFFILE DBMS=CSV OUT=CUSTS.CUSTOMERS;
+	GETNAMES=YES;
+RUN;
+
+DATA _NULL_;
+	FILENAME REFFILE "&path/ORDERS.csv";
+RUN;
+
+PROC IMPORT DATAFILE=REFFILE DBMS=CSV OUT=CUSTS.ORDERS;
+	GETNAMES=YES;
+RUN;
+
+DATA _NULL_;
+	FILENAME REFFILE "&path/POSTCODES.csv";
+RUN;
+
+PROC IMPORT DATAFILE=REFFILE DBMS=CSV OUT=CUSTS.POSTCODES;
+	GETNAMES=YES;
+RUN;
+
+PROC SQL ;
+	CREATE TABLE CUSTS.MERGED AS 
+	SELECT c.custno as Custno
+	,CASE c.gender WHEN 1 THEN "Male" WHEN 2 THEN "Female" END as Gender
+	,c.age as Age
+	,c.postcode as Postcode
+	,o.Date 
+	,o.actual_order as ActualOrder
+	,p.Region 
+	FROM CUSTS.CUSTOMERS c
+	INNER JOIN CUSTS.ORDERS o
+	ON o.custno = c.custno
+	INNER JOIN CUSTS.POSTCODES p
+	ON p.Postcode = c.postcode;
+QUIT;
