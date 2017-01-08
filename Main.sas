@@ -15,6 +15,8 @@ RUN;
 * Section below runs sub-programs for marketing analysis suite;
 %include "&path/Import.sas";
 RUN;
+%include "&path/Transform.sas";
+RUN;
 %include "&path/Customers.sas";
 RUN;
 %include "&path/Orders.sas";
