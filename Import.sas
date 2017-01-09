@@ -5,14 +5,7 @@
 /*          intermediate tables                                     */
 /********************************************************************/
 
-* Clean up tables from memory prior to recreating;
-/*
-%web_drop_table(CUSTS.CUSTOMERS);
-%web_drop_table(CUSTS.ORDERS);
-%web_drop_table(CUSTS.POSTCODES);
-%web_drop_table(CUSTS.MERGED);
-%web_drop_table(CUSTS.RAWCUSTOMERS);
-*/
+
 * Section below imports raw datafiles and generates tables for later analysis;
 DATA _NULL_;
 	FILENAME REFFILE "&path/CUSTOMERS.csv";

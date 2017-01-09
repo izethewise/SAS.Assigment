@@ -39,19 +39,19 @@ title 'Customers by age and region';
 proc means data=custs.customers maxdec=2
 		   N mean median min max q1 q3;
 	var age;
-	by RegionLong ;
+	by region;
 run;
 
 * Box plot of customer age by region;
 proc boxplot data=custs.customers;
-	plot age*RegionLong;
+	plot age*region;
 	insetgroup N;
 run;
 
 * Stacked bar chart of customers per region by gender;
 title 'Customers by gender and region';
 proc sgplot data=custs.customers;
-	vbar RegionLong / stat=freq group=gender nostatlabel groupdisplay=stack;
+	vbar region / stat=freq group=gender nostatlabel groupdisplay=stack;
 	xaxis display=(nolabel);
 	yaxis grid;
 run;
