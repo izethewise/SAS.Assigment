@@ -1,7 +1,10 @@
 
 
-proc means data=custs.orders maxdec=2;
+proc means data=custs.orders
+	mean median min max sum
+	 maxdec=2;
 	var OrderAmount;
+	by custno;
 run;
 
 proc sort data=custs.orders;
