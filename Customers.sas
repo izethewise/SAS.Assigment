@@ -58,6 +58,7 @@ run;
 
 
 proc corr data=custs.customers;
+run;
 *proc reg data=custs.customers;
 
   
