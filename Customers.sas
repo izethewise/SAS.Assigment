@@ -4,6 +4,13 @@
 /* Purpose: Generates stats and graphs for customer data            */
 /********************************************************************/
 
+* Table of customer age stats;
+title 'Age statistics of customer base';
+proc means data=custs.customers maxdec=2
+		   N mean median min max q1 q3;
+	var age;
+run;
+
 * Sort to enable grouping by gender;
 proc sort data=custs.customers;
 	by gender;
@@ -56,9 +63,20 @@ proc sgplot data=custs.customers;
 	yaxis grid;
 run;
 
+/*
 
-proc corr data=custs.customers;
+*One-way anova with age as dependent and region independent;
+proc anova data = custs.customers;
+	class Region;
+	model Age = Region;
 run;
-*proc reg data=custs.customers;
+
+*t-test to compare age between gender;
+proc ttest data=custs.customers;
+ 	class Gender;
+	var Age;
+run;
+
+*/
 
   

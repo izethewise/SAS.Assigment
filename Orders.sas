@@ -50,6 +50,27 @@ proc boxplot data=CUSTS.ORDERS ;
 	insetgroup N;
 run;
 
+*t-test to compare order amount between gender2;
+proc ttest data=custs.merged;
+ 	class Gender;
+	var OrderAmount;
+run;
+
+*One-way anova with order amount as dependent and region independent;
+proc anova data = custs.merged;
+	class Region;
+	model OrderAmount= Region;
+run;
+
+proc anova data=custs.merged;
+  class Gender Region;
+  model OrderAmount = Gender Region Gender*Region;
+run;
+
+proc glm data=custs.merged;
+   class Gender Region;
+   model OrderAmount = Gender Region Gender*Region;
+run;
 
 /*
 proc sort data=CUSTS.ORDERS;

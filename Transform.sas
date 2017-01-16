@@ -8,11 +8,14 @@
 PROC FORMAT;
 	value fmtgender 1="Male" 2="Female";
 	value $fmtregion "W"="West" "N"="North" "E"="East" "S"="South";
+	value fmtmonth 1="Jan" 2="Feb" 3="Mar" 4="Apr" 5="May" 6="Jun" 
+				   7="Jul" 8="Aug" 9="Sep" 10="Oct" 11="Nov" 12="Dec";
 RUN;
 
 DATA CUSTS.ORDERS;
 	set CUSTS.RAWORDERS;
 	format OrderDate ddmmyy10.;
+	format OrderMonth fmtmonth.;
 	CustNo=custno;
 	OrderAmount=actual_order;
 	OrderDate=date;
@@ -109,7 +112,6 @@ SELECT custno as Custno
 ,YEAR(Date) as OrderYear
 FROM CUSTS.RAWORDERS;
 QUIT;
-
  * Merge customer and location data, create age bins;
 PROC SQL;
 CREATE TABLE CUSTS.CUSTOMERS AS
@@ -143,8 +145,6 @@ FROM CUSTS.RAWCUSTOMERS c
 INNER JOIN CUSTS.RAWPOSTCODES p
 ON p.POSTCODE = c.POSTCODE;
 QUIT;
-
-
  * Merge customer and order data;
 PROC SQL ;
 CREATE TABLE CUSTS.MERGED AS
@@ -163,5 +163,4 @@ FROM CUSTS.CUSTOMERS c
 INNER JOIN CUSTS.ORDERS o
 ON o.custno = c.custno;
 QUIT;
-
  */
