@@ -4,32 +4,27 @@
 /* Purpose: Generates stats and graphs for customer data            */
 /********************************************************************/
 
-* Table of customer age stats;
-title 'Age statistics of customer base';
-proc means data=custs.customers maxdec=2
-		   N mean median min max q1 q3;
-	var age;
+* Summary statistics of customer age;
+proc sort data=custs.genstats;
+by gender;
+run;
+title 'Age statistics of customer base by gender';
+proc print data=custs.genstats noobs;
+	format mean 10.1;
 run;
 
-* Sort to enable grouping by gender;
-proc sort data=custs.customers;
-	by gender;
-run;
-
-* Table of customer age by gender;
-title 'Customers by age and gender';
-proc means data=custs.customers maxdec=2
-		   N mean median min max q1 q3;
-	var age;
-	by Gender;
-run;
 * Box plot of customer age by gender;
+proc sort data=custs.customers;
+by gender;
+run;
+
 proc boxplot data=custs.customers;
 	plot age*gender;
 	insetgroup N;
 run;
 
 * Clustered bar chart of customers per age range by gender;
+title 'Age range by gender';
 proc sgplot data=custs.customers;
 	vbar AgeRange/ stat=freq group=gender nostatlabel groupdisplay=cluster;
 	xaxis display=(nolabel);
@@ -42,11 +37,9 @@ proc sort data=custs.customers;
 run;
 
 * Table of customer age by region;
-title 'Customers by age and region';
-proc means data=custs.customers maxdec=2
-		   N mean median min max q1 q3;
-	var age;
-	by region;
+title 'Age statistics of customer base by region';
+proc print data=custs.regstats noobs;
+	format mean 10.1;
 run;
 
 * Box plot of customer age by region;
@@ -63,20 +56,6 @@ proc sgplot data=custs.customers;
 	yaxis grid;
 run;
 
-/*
 
-*One-way anova with age as dependent and region independent;
-proc anova data = custs.customers;
-	class Region;
-	model Age = Region;
-run;
-
-*t-test to compare age between gender;
-proc ttest data=custs.customers;
- 	class Gender;
-	var Age;
-run;
-
-*/
 
   

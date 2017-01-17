@@ -4,26 +4,34 @@
 /* Purpose: Transforms and merges raw data for later analyses       */
 /********************************************************************/
 
+* Suppress printing output in this module;
+ods exclude all;
+
 * Formats used in transformations;
 PROC FORMAT;
-	value fmtgender 1="Male" 2="Female";
+	value fmtgender 0="All" 1="Male" 2="Female";
 	value $fmtregion "W"="West" "N"="North" "E"="East" "S"="South";
 	value fmtmonth 1="Jan" 2="Feb" 3="Mar" 4="Apr" 5="May" 6="Jun" 
 				   7="Jul" 8="Aug" 9="Sep" 10="Oct" 11="Nov" 12="Dec";
 RUN;
 
+* Format RAWORDERS dataset;
 DATA CUSTS.ORDERS;
 	set CUSTS.RAWORDERS;
 	format OrderDate ddmmyy10.;
 	format OrderMonth fmtmonth.;
-	CustNo=custno;
+	format OrderYearMonth YYMON.;
+	format OrderAmount NLMNLGBP.;
 	OrderAmount=actual_order;
 	OrderDate=date;
 	OrderMonth=MONTH(Date);
 	OrderYear=YEAR(Date);
+	OrderYearMonth=date;
+	OrderDay=DAY(date);
 	drop actual_order Date;
 RUN;
 
+* Format RAWCUSTOMERS dataset;
 DATA CUSTS.CUSTOMERS;
 	set CUSTS.RAWCUSTOMERS;
 	format gender fmtgender.;
@@ -71,6 +79,7 @@ DATA CUSTS.CUSTOMERS;
 		AgeRange="Over 80";
 RUN;
 
+* Merge CUSTOMERS and RAWPOSTCODES datasets;
 PROC SORT DATA=CUSTS.CUSTOMERS;
 	by postcode;
 RUN;
@@ -87,6 +96,7 @@ DATA CUSTS.CUSTOMERS;
 	format Region $fmtregion.;
 RUN;
 
+* Merge CUSTOMERS and ORDERS datasets;
 PROC SORT DATA=CUSTS.CUSTOMERS;
 	by custno;
 RUN;
@@ -102,65 +112,91 @@ DATA CUSTS.MERGED;
 	if cno=1;
 RUN;
 
-/*
-PROC SQL;
-CREATE TABLE CUSTS.ORDERS AS
-SELECT custno as Custno
-,actual_order as OrderAmount
-,Date as OrderDate
-,MONTH(Date) as OrderMonth
-,YEAR(Date) as OrderYear
-FROM CUSTS.RAWORDERS;
-QUIT;
- * Merge customer and location data, create age bins;
-PROC SQL;
-CREATE TABLE CUSTS.CUSTOMERS AS
-SELECT c.custno as Custno
-,CASE c.gender WHEN 1 THEN "Male" WHEN 2 THEN "Female" ELSE "Unknown" END as Gender
-,c.age as Age
-,CASE WHEN c.age BETWEEN 16 AND 20 THEN "16 - 20"
-WHEN c.age BETWEEN 21 AND 25 THEN "21 - 25"
-WHEN c.age BETWEEN 26 AND 30 THEN "26 - 30"
-WHEN c.age BETWEEN 31 AND 35 THEN "31 - 35"
-WHEN c.age BETWEEN 36 AND 40 THEN "36 - 40"
-WHEN c.age BETWEEN 41 AND 45 THEN "41 - 45"
-WHEN c.age BETWEEN 46 AND 50 THEN "46 - 50"
-WHEN c.age BETWEEN 51 AND 55 THEN "51 - 55"
-WHEN c.age BETWEEN 56 AND 60 THEN "56 - 60"
-WHEN c.age BETWEEN 61 AND 65 THEN "61 - 65"
-WHEN c.age BETWEEN 66 AND 70 THEN "66 - 70"
-WHEN c.age BETWEEN 71 AND 75 THEN "71 - 75"
-WHEN c.age BETWEEN 76 AND 80 THEN "76 - 80"
-WHEN c.age > 80 THEN "Over 80"
-END as AgeRange
-,c.postcode as Postcode
-,p.Region
-,CASE p.REGION WHEN "W" THEN "West"
-WHEN "N" THEN "North"
-WHEN "E" THEN "East"
-WHEN "S" THEN "South"
-ELSE "Unknown"
-END as RegionLong
-FROM CUSTS.RAWCUSTOMERS c
-INNER JOIN CUSTS.RAWPOSTCODES p
-ON p.POSTCODE = c.POSTCODE;
-QUIT;
- * Merge customer and order data;
-PROC SQL ;
-CREATE TABLE CUSTS.MERGED AS
-SELECT c.Custno
-,c.Gender
-,c.Age
-,c.AgeRange
-,c.Postcode
-,o.OrderDate
-,o.OrderMonth
-,o.OrderYear
-,o.OrderAmount
-,c.Region
-,c.RegionLong
-FROM CUSTS.CUSTOMERS c
-INNER JOIN CUSTS.ORDERS o
-ON o.custno = c.custno;
-QUIT;
- */
+* Create summary table for customer age by gender;
+PROC SORT DATA=CUSTS.CUSTOMERS;
+	by gender;
+RUN;
+
+PROC MEANS DATA=CUSTS.CUSTOMERS
+	N mean median min max q1 q3;
+	var age;
+	by gender;
+	output out=CUSTS.tmpCUSTS1 N=N mean=Mean median=Median min=Min max=Max q1=Q1 q3=Q3;
+RUN;
+
+PROC MEANS DATA=CUSTS.CUSTOMERS
+	N mean median min max q1 q3;
+	var age;
+	output out=CUSTS.tmpCUSTS2 N=N mean=Mean median=Median min=Min max=Max q1=Q1 q3=Q3;
+RUN;
+ 
+DATA CUSTS.GENSTATS;
+set CUSTS.tmpCUSTS1 CUSTS.tmpCUSTS2 ;
+if gender = . then gender = 0;
+format gender fmtgender.;
+drop _TYPE_ _FREQ_;
+RUN;
+
+* Create summary table for customer age by region;
+PROC SORT DATA=CUSTS.CUSTOMERS;
+	by region;
+RUN;
+
+PROC MEANS DATA=CUSTS.CUSTOMERS
+	N mean median min max q1 q3;
+	var age;
+	by region;
+	output out=CUSTS.REGSTATS N=N mean=Mean median=Median min=Min max=Max q1=Q1 q3=Q3;
+RUN;
+
+DATA CUSTS.REGSTATS;
+	set CUSTS.REGSTATS;
+	drop _TYPE_ _FREQ_;
+RUN;
+
+* Create summary table of sales by gender;
+PROC SORT DATA=CUSTS.MERGED;
+	by gender;
+RUN;
+
+PROC MEANS DATA=CUSTS.MERGED
+	N mean median min max q1 q3;
+	var OrderAmount;
+	by gender;
+	output out=CUSTS.tmpCUSTS3 N=N mean=Mean median=Median min=Min max=Max q1=Q1 q3=Q3 sum=Sum;
+RUN;
+
+PROC MEANS DATA=CUSTS.MERGED
+	N mean median min max q1 q3;
+	var OrderAmount;
+	output out=CUSTS.tmpCUSTS4 N=N mean=Mean median=Median min=Min max=Max q1=Q1 q3=Q3 sum=Sum;
+RUN;
+ 
+DATA CUSTS.GENSALESTATS;
+set CUSTS.tmpCUSTS3 CUSTS.tmpCUSTS4 ;
+if gender = . then gender = 0;
+format gender fmtgender.;
+drop _TYPE_ _FREQ_;
+RUN;
+
+* Create summary table of sales by region;
+PROC SORT DATA=CUSTS.MERGED;
+	by region;
+RUN;
+
+PROC MEANS DATA=CUSTS.MERGED
+	N mean median min max q1 q3;
+	var OrderAmount;
+	by region;
+	output out=CUSTS.REGSALESTATS N=N mean=Mean median=Median min=Min max=Max q1=Q1 q3=Q3 sum=Sum;
+RUN;
+ 
+DATA CUSTS.REGSALESTATS;
+	set CUSTS.REGSALESTATS;
+	drop _TYPE_ _FREQ_;
+RUN;
+
+
+* Re-enable printing of output;
+ods exclude none;
+run;

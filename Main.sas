@@ -7,10 +7,6 @@
 * path variable should be changed to the SAS path of deployment;
 %let path = /folders/myshortcuts/Coursework/ProgAssessment;
 
-ods html close;
-ods tagsets.simplelatex file="&path/Output/simple.tex" stylesheet="&path/Output/sas.sty"(url="sas");
-ods html PATH="&path/Output";
-
 * Create library for referenced tables;
 DATA _NULL_;
 	LIBNAME CUSTS "&path";
